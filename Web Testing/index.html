@@ -1,0 +1,1123 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GUST - Game Testing</title>
+<style>
+  :root {
+    --bg: #090a0d;
+    --panel: #14171d;
+    --panel-2: #1c2028;
+    --line: #303541;
+    --text: #f1eee8;
+    --muted: #9aa0ad;
+    --blue: #3d6df5;
+    --red: #ef3b32;
+    --green: #11b56a;
+    --yellow: #f5c243;
+    --ok: #83e2aa;
+    --warn: #f5c243;
+    --bad: #ff746d;
+  }
+
+  * { box-sizing: border-box; }
+
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+
+  body {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  header {
+    display: grid;
+    grid-template-columns: minmax(190px, 1fr) auto;
+    gap: 18px;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    background: #0d0f14;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 16px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+  }
+
+  .subtitle {
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(78px, auto));
+    gap: 10px;
+  }
+
+  .stat {
+    min-width: 78px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+  }
+
+  .stat strong {
+    display: block;
+    font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+    font-size: 18px;
+    line-height: 1.1;
+  }
+
+  .stat span {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    min-height: 0;
+  }
+
+  #stage {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    background:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px),
+      radial-gradient(circle at center, rgba(255,255,255,.06), transparent 36%),
+      #090a0d;
+    background-size: 34px 34px, 34px 34px, auto, auto;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  #message {
+    position: absolute;
+    left: 50%;
+    bottom: 42px;
+    transform: translateX(-50%);
+    min-width: min(620px, calc(100% - 32px));
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    background: rgba(12, 14, 19, .86);
+    color: var(--text);
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 13px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity .18s ease;
+    pointer-events: none;
+  }
+
+  #message.visible { opacity: 1; }
+
+  aside {
+    min-height: 0;
+    border-left: 1px solid var(--line);
+    background: var(--panel);
+    overflow: auto;
+  }
+
+  .section {
+    padding: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .section h2 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .help {
+    margin: 0;
+    color: #c8cbd1;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .keymap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .key {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+
+  .key b {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 30px;
+    border: 1px solid currentColor;
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 15px;
+  }
+
+  .key span {
+    min-width: 0;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .controls {
+    display: grid;
+    gap: 10px;
+  }
+
+  label {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  select,
+  button {
+    height: 36px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    font: inherit;
+  }
+
+  select {
+    padding: 0 10px;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:hover {
+    border-color: #626978;
+    background: #242936;
+  }
+
+  .button-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .log {
+    display: grid;
+    gap: 6px;
+    max-height: 258px;
+    overflow: auto;
+    padding-right: 3px;
+  }
+
+  .entry {
+    border: 1px solid var(--line);
+    padding: 8px;
+    background: #101218;
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 11px;
+    color: #d8dbe0;
+  }
+
+  .entry.good { border-color: rgba(131,226,170,.55); }
+  .entry.bad { border-color: rgba(255,116,109,.55); }
+  .entry.warn { border-color: rgba(245,194,67,.55); }
+
+  footer {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 10px 18px;
+    border-top: 1px solid var(--line);
+    background: #0d0f14;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  footer strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  @media (max-width: 980px) {
+    body { overflow: auto; }
+    header,
+    main {
+      grid-template-columns: 1fr;
+    }
+    main {
+      grid-template-rows: minmax(520px, 62vh) auto;
+    }
+    aside { border-left: 0; border-top: 1px solid var(--line); }
+    .stats { grid-template-columns: repeat(3, minmax(88px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>GUST</h1>
+    <div class="subtitle">PC Game Testing - vier Controller auf Tastatur</div>
+  </div>
+  <div class="stats" aria-live="polite">
+    <div class="stat"><strong id="score">0</strong><span>Punkte</span></div>
+    <div class="stat"><strong id="attempts">0</strong><span>Versuche</span></div>
+    <div class="stat"><strong id="spread">-</strong><span>Abweichung</span></div>
+    <div class="stat"><strong id="window">400</strong><span>Fenster ms</span></div>
+    <div class="stat"><strong id="mode">Solo</strong><span>Modus</span></div>
+  </div>
+</header>
+
+<main>
+  <div id="stage">
+    <canvas id="game" aria-label="GUST Game Testing Canvas"></canvas>
+    <div id="message"></div>
+  </div>
+
+  <aside>
+    <section class="section">
+      <h2>Testauftrag</h2>
+      <p class="help" id="taskText">Haltet eure Taste, ladet das Signal auf und lasst gemeinsam los. Alle vier Signale muessen synchron und mit aehnlicher Staerke an der Kugel ankommen.</p>
+    </section>
+
+    <section class="section">
+      <h2>Controller</h2>
+      <div class="keymap">
+        <div class="key" style="color:var(--blue)"><b>A</b><span>A / blau</span></div>
+        <div class="key" style="color:var(--red)"><b>K</b><span>B / rot</span></div>
+        <div class="key" style="color:var(--green)"><b>L</b><span>C / gruen</span></div>
+        <div class="key" style="color:var(--yellow)"><b>S</b><span>D / gelb</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Testing</h2>
+      <div class="controls">
+        <label>
+          Spielmodus
+          <select id="gameMode">
+            <option value="og">OG GUST: Sync + Signalstaerke</option>
+            <option value="tug">Tug of War: Teamdruck</option>
+            <option value="loop">Looping Louie: Kreisreaktion</option>
+            <option value="pong">Ping Pong: Signal weiterleiten</option>
+          </select>
+        </label>
+        <label>
+          Testmodus
+          <select id="testMode">
+            <option value="Solo">Solo: eine Person</option>
+            <option value="Duo">Duo: A/S und K/L</option>
+            <option value="Vier">Vier Personen</option>
+          </select>
+        </label>
+        <label>
+          Schwierigkeit
+          <select id="difficulty">
+            <option value="fixed">Testmodus: fix 400 ms</option>
+            <option value="easy">Easy: 600 ms</option>
+            <option value="normal">Normal: 400 ms, enger nach Treffer</option>
+            <option value="hard">Hard: 250 ms</option>
+          </select>
+        </label>
+        <div class="button-row">
+          <button id="resetBtn" type="button">Reset</button>
+          <button id="exportBtn" type="button">CSV Export</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Session Log</h2>
+      <div id="log" class="log" aria-live="polite"></div>
+    </section>
+  </aside>
+</main>
+
+<footer>
+  <span><strong>A/S/K/L</strong> halten = laden</span>
+  <span><strong>Loslassen</strong> = Signal senden</span>
+  <span><strong>R</strong> = Reset</span>
+</footer>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const stage = document.getElementById("stage");
+const msg = document.getElementById("message");
+const logEl = document.getElementById("log");
+
+const ui = {
+  score: document.getElementById("score"),
+  attempts: document.getElementById("attempts"),
+  spread: document.getElementById("spread"),
+  window: document.getElementById("window"),
+  mode: document.getElementById("mode"),
+  taskText: document.getElementById("taskText"),
+  gameMode: document.getElementById("gameMode"),
+  testMode: document.getElementById("testMode"),
+  difficulty: document.getElementById("difficulty"),
+  resetBtn: document.getElementById("resetBtn"),
+  exportBtn: document.getElementById("exportBtn")
+};
+
+const TRAVEL = 1100;
+const CHARGE_TIME = 900;
+const SEGMENTS = 52;
+const STRENGTH_TOLERANCE = 0.34;
+
+const controllers = [
+  { id: "A", key: "a", label: "Controller A", color: "#3d6df5", rgb: [61,109,245], ax: .16, ay: .18, bow: -1 },
+  { id: "B", key: "k", label: "Controller B", color: "#ef3b32", rgb: [239,59,50], ax: .84, ay: .18, bow: 1 },
+  { id: "C", key: "l", label: "Controller C", color: "#11b56a", rgb: [17,181,106], ax: .84, ay: .82, bow: -1 },
+  { id: "D", key: "s", label: "Controller D", color: "#f5c243", rgb: [245,194,67], ax: .16, ay: .82, bow: 1 }
+];
+
+let W = 0;
+let H = 0;
+let DPR = 1;
+let radius = 44;
+let center = { x: 0, y: 0 };
+let held = {};
+let pulses = [];
+let arrivals = [];
+let sessionLog = [];
+let lastTime = performance.now();
+let gameTime = 0;
+let score = 0;
+let attempts = 0;
+let currentWindow = 400;
+let lastSpread = null;
+let lastReason = "Bereit";
+let ball = { energy: .06, ring: 0, shake: 0 };
+let messageTimer = null;
+let audio = null;
+let modeState = {};
+
+const taskTexts = {
+  og: "Haltet eure Taste, ladet das Signal auf und lasst gemeinsam los. Alle vier Signale muessen synchron und mit aehnlicher Staerke an der Kugel ankommen.",
+  tug: "Team links spielt mit A/S, Team rechts mit K/L. Haltet und lasst los, um Kraft zur Kugel zu schicken. Wer die Balance zuerst auf seine Seite zieht, punktet.",
+  loop: "Ein Ziel springt im Kreis von Controller zu Controller. Drueckt die passende Taste, wenn euer Controller aktiv ist. Falsche Tasten zaehlen als Fehler.",
+  pong: "Ein Signal laeuft im Kreis. Drueckt die Taste des naechsten Controllers, bevor das Zeitfenster endet, um das Signal weiterzuleiten."
+};
+
+function resetController(c) {
+  c.charge = 0;
+  c.holding = false;
+  c.build = 0;
+  c.flash = 0;
+  c.lastSend = -99999;
+  c.releasedAt = null;
+}
+
+controllers.forEach(resetController);
+
+function difficultyWindow() {
+  const value = ui.difficulty.value;
+  if (value === "easy") return 600;
+  if (value === "hard") return 250;
+  if (value === "fixed") return 400;
+  return currentWindow;
+}
+
+function modeName() {
+  return ui.gameMode.options[ui.gameMode.selectedIndex].text.split(":")[0];
+}
+
+function resize() {
+  const rect = stage.getBoundingClientRect();
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = Math.max(320, rect.width);
+  H = Math.max(420, rect.height);
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  layout();
+}
+
+function layout() {
+  center = { x: W / 2, y: H / 2 };
+  radius = Math.max(34, Math.min(W, H) * .075);
+  controllers.forEach(c => {
+    c.x = c.ax * W;
+    c.y = c.ay * H;
+    const mx = (c.x + center.x) / 2;
+    const my = (c.y + center.y) / 2;
+    const dx = center.x - c.x;
+    const dy = center.y - c.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const bend = .16 * c.bow;
+    c.cx = mx + (-dy / len) * len * bend;
+    c.cy = my + (dx / len) * len * bend;
+  });
+}
+
+function pointAt(c, t) {
+  const u = 1 - t;
+  return {
+    x: u * u * c.x + 2 * u * t * c.cx + t * t * center.x,
+    y: u * u * c.y + 2 * u * t * c.cy + t * t * center.y
+  };
+}
+
+function color(c, alpha) {
+  return `rgba(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]},${alpha})`;
+}
+
+function beep(freq, dur = .08, gain = .035, type = "sine") {
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audio.createOscillator();
+    const g = audio.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, audio.currentTime);
+    g.gain.linearRampToValueAtTime(gain, audio.currentTime + .012);
+    g.gain.exponentialRampToValueAtTime(.0001, audio.currentTime + dur);
+    osc.connect(g).connect(audio.destination);
+    osc.start();
+    osc.stop(audio.currentTime + dur + .04);
+  } catch (err) {}
+}
+
+function show(text, tone = "info") {
+  lastReason = text;
+  msg.textContent = text;
+  msg.style.borderColor = tone === "good" ? "rgba(131,226,170,.7)" : tone === "bad" ? "rgba(255,116,109,.75)" : tone === "warn" ? "rgba(245,194,67,.75)" : "var(--line)";
+  msg.classList.add("visible");
+  clearTimeout(messageTimer);
+  messageTimer = setTimeout(() => msg.classList.remove("visible"), 2500);
+}
+
+function send(c) {
+  const amt = Math.max(.12, c.charge);
+  c.releasedAt = Math.round(gameTime);
+  pulses.push({ c, t0: gameTime, amt, ghost: false });
+  c.build = Math.min(1, c.build + .28 + amt * .26);
+  c.lastSend = gameTime;
+  c.flash = 1;
+  beep(220 + amt * 320, .12, .045, "triangle");
+}
+
+function arrive(p) {
+  if (ui.gameMode.value === "tug") {
+    evaluateTugSignal(p);
+    return;
+  }
+
+  arrivals = arrivals.filter(a => gameTime - a.t < 1800 && a.id !== p.c.id);
+  arrivals.push({
+    id: p.c.id,
+    key: p.c.key.toUpperCase(),
+    t: gameTime,
+    release: p.c.releasedAt,
+    amt: p.amt
+  });
+
+  ball.energy = Math.min(1, ball.energy + .13 + p.amt * .12);
+  ball.ring = 1;
+  beep(440, .075, .026);
+
+  if (arrivals.length === 4) evaluateAttempt();
+}
+
+function evaluateAttempt() {
+  const windowMs = difficultyWindow();
+  const times = arrivals.map(a => a.t);
+  const amounts = arrivals.map(a => a.amt);
+  const spread = Math.max(...times) - Math.min(...times);
+  const strengthDiff = Math.max(...amounts) - Math.min(...amounts);
+  const success = spread <= windowMs && strengthDiff <= STRENGTH_TOLERANCE;
+  let reason = "Treffer";
+  let tone = "good";
+
+  attempts += 1;
+  lastSpread = Math.round(spread);
+
+  if (success) {
+    score += 1;
+    if (ui.difficulty.value === "normal") currentWindow = Math.max(150, currentWindow - 30);
+    ball.energy = 1;
+    ball.shake = 1;
+    successBurst();
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .42, .05), i * 70));
+    show(`Treffer: ${lastSpread} ms Abweichung`, "good");
+  } else if (spread > windowMs) {
+    reason = "Timing";
+    tone = "bad";
+    ball.energy *= .42;
+    show(`Nicht synchron: ${lastSpread} ms, erlaubt ${windowMs} ms`, "bad");
+  } else {
+    reason = "Signalstaerke";
+    tone = "warn";
+    ball.energy *= .56;
+    show(`Timing passt, Signalstaerken zu unterschiedlich`, "warn");
+  }
+
+  sessionLog.unshift({
+    attempt: attempts,
+    gameMode: ui.gameMode.value,
+    mode: ui.testMode.value,
+    difficulty: ui.difficulty.value,
+    success,
+    reason,
+    spread: Math.round(spread),
+    window: windowMs,
+    strengthDiff: Number(strengthDiff.toFixed(3)),
+    A: amountFor("A"),
+    B: amountFor("B"),
+    C: amountFor("C"),
+    D: amountFor("D")
+  });
+
+  renderLog();
+  arrivals = [];
+}
+
+function amountFor(id) {
+  const row = arrivals.find(a => a.id === id);
+  return row ? Number(row.amt.toFixed(3)) : 0;
+}
+
+function successBurst() {
+  for (let wave = 0; wave < 3; wave++) {
+    setTimeout(() => {
+      controllers.forEach(c => {
+        pulses.push({ c, t0: gameTime, amt: .88 - wave * .2, ghost: true });
+        c.build = 1;
+      });
+    }, wave * 150);
+  }
+}
+
+function evaluateTugSignal(p) {
+  const side = p.c.id === "A" || p.c.id === "D" ? -1 : 1;
+  const strength = Math.round((16 + p.amt * 22) * side);
+  modeState.balance = Math.max(-100, Math.min(100, modeState.balance + strength));
+  attempts += 1;
+  lastSpread = Math.abs(modeState.balance);
+  ball.energy = Math.min(1, .18 + Math.abs(modeState.balance) / 120);
+  ball.ring = .8;
+
+  let winner = "";
+  if (modeState.balance <= -100) {
+    score += 1;
+    winner = "Team links";
+    modeState.balance = 0;
+    successBurst();
+    show("Tug of War: Team links punktet", "good");
+  } else if (modeState.balance >= 100) {
+    score += 1;
+    winner = "Team rechts";
+    modeState.balance = 0;
+    successBurst();
+    show("Tug of War: Team rechts punktet", "good");
+  } else {
+    show(`Balance: ${modeState.balance}`, "info");
+  }
+
+  sessionLog.unshift({
+    attempt: attempts,
+    gameMode: "tug",
+    mode: ui.testMode.value,
+    difficulty: ui.difficulty.value,
+    success: Boolean(winner),
+    reason: winner || "Balance",
+    spread: Math.abs(modeState.balance),
+    window: 100,
+    strengthDiff: Number(p.amt.toFixed(3)),
+    A: p.c.id === "A" ? Number(p.amt.toFixed(3)) : 0,
+    B: p.c.id === "B" ? Number(p.amt.toFixed(3)) : 0,
+    C: p.c.id === "C" ? Number(p.amt.toFixed(3)) : 0,
+    D: p.c.id === "D" ? Number(p.amt.toFixed(3)) : 0
+  });
+  renderLog();
+}
+
+function handleInstantModePress(c) {
+  if (ui.gameMode.value === "loop") {
+    handleLoopPress(c);
+    return true;
+  }
+  if (ui.gameMode.value === "pong") {
+    handlePongPress(c);
+    return true;
+  }
+  return false;
+}
+
+function handleLoopPress(c) {
+  const target = controllers[modeState.targetIndex];
+  attempts += 1;
+  c.flash = 1;
+
+  if (c === target) {
+    score += 1;
+    modeState.streak += 1;
+    modeState.targetIndex = (modeState.targetIndex + 1) % controllers.length;
+    modeState.nextSwitch = gameTime + Math.max(420, 1050 - modeState.streak * 18);
+    pulses.push({ c, t0: gameTime, amt: .8, ghost: true });
+    ball.energy = Math.min(1, ball.energy + .12);
+    ball.ring = 1;
+    beep(520 + modeState.streak * 16, .08, .035);
+    show(`Looping Louie: Treffer ${modeState.streak}`, "good");
+    logModeAttempt(true, "Loop", c.id, target.id);
+  } else {
+    modeState.streak = 0;
+    modeState.nextSwitch = gameTime + 900;
+    ball.energy *= .55;
+    beep(150, .12, .04, "sawtooth");
+    show(`Falscher Controller: Ziel war ${target.key.toUpperCase()}`, "bad");
+    logModeAttempt(false, "Falsch", c.id, target.id);
+  }
+}
+
+function handlePongPress(c) {
+  const target = controllers[modeState.targetIndex];
+  attempts += 1;
+  c.flash = 1;
+
+  if (c === target && gameTime <= modeState.deadline) {
+    score += 1;
+    modeState.streak += 1;
+    modeState.lastIndex = modeState.targetIndex;
+    modeState.targetIndex = (modeState.targetIndex + 1) % controllers.length;
+    modeState.deadline = gameTime + Math.max(520, difficultyWindow() + 520);
+    pulses.push({ c, t0: gameTime, amt: .92, ghost: true });
+    ball.energy = Math.min(1, ball.energy + .11);
+    ball.ring = 1;
+    beep(620 + modeState.streak * 10, .07, .035, "triangle");
+    show(`Ping Pong: weitergeleitet zu ${controllers[modeState.targetIndex].key.toUpperCase()}`, "good");
+    logModeAttempt(true, "Weiter", c.id, target.id);
+  } else {
+    const reason = c === target ? "Zu spaet" : "Falsch";
+    modeState.streak = 0;
+    modeState.targetIndex = 0;
+    modeState.lastIndex = 3;
+    modeState.deadline = gameTime + difficultyWindow() + 650;
+    ball.energy *= .45;
+    beep(135, .12, .04, "sawtooth");
+    show(`Ping Pong: ${reason}, naechstes Ziel A`, "bad");
+    logModeAttempt(false, reason, c.id, target.id);
+  }
+}
+
+function logModeAttempt(success, reason, pressed, target) {
+  sessionLog.unshift({
+    attempt: attempts,
+    gameMode: ui.gameMode.value,
+    mode: ui.testMode.value,
+    difficulty: ui.difficulty.value,
+    success,
+    reason,
+    spread: pressed,
+    window: target,
+    strengthDiff: modeState.streak || 0,
+    A: pressed === "A" ? 1 : 0,
+    B: pressed === "B" ? 1 : 0,
+    C: pressed === "C" ? 1 : 0,
+    D: pressed === "D" ? 1 : 0
+  });
+  renderLog();
+}
+
+function renderLog() {
+  logEl.innerHTML = "";
+  sessionLog.slice(0, 16).forEach(row => {
+    const div = document.createElement("div");
+    div.className = `entry ${row.success ? "good" : row.reason === "Timing" ? "bad" : "warn"}`;
+    if (row.gameMode === "loop" || row.gameMode === "pong") {
+      div.textContent = `#${row.attempt} ${row.success ? "OK" : row.reason} | gedrueckt:${row.spread} ziel:${row.window} | streak:${row.strengthDiff}`;
+    } else if (row.gameMode === "tug") {
+      div.textContent = `#${row.attempt} ${row.success ? row.reason : "Balance"} | wert:${row.spread}/100 | A:${row.A} B:${row.B} C:${row.C} D:${row.D}`;
+    } else {
+      div.textContent = `#${row.attempt} ${row.success ? "OK" : row.reason} | ${row.spread}/${row.window} ms | A:${row.A} B:${row.B} C:${row.C} D:${row.D}`;
+    }
+    logEl.appendChild(div);
+  });
+}
+
+function resetGame() {
+  held = {};
+  pulses = [];
+  arrivals = [];
+  sessionLog = [];
+  score = 0;
+  attempts = 0;
+  currentWindow = ui.difficulty.value === "easy" ? 600 : ui.difficulty.value === "hard" ? 250 : 400;
+  lastSpread = null;
+  modeState = {
+    balance: 0,
+    targetIndex: 0,
+    lastIndex: 3,
+    streak: 0,
+    nextSwitch: gameTime + 900,
+    deadline: gameTime + difficultyWindow() + 650
+  };
+  ui.taskText.textContent = taskTexts[ui.gameMode.value];
+  ball = { energy: .06, ring: 0, shake: 0 };
+  controllers.forEach(resetController);
+  renderLog();
+  show(`${modeName()} gestartet`, "info");
+}
+
+function exportCsv() {
+  const header = ["attempt","gameMode","mode","difficulty","success","reason","spread","window","strengthDiff","A","B","C","D"];
+  const rows = sessionLog.slice().reverse().map(row => header.map(key => row[key]).join(","));
+  const csv = [header.join(","), ...rows].join("\n");
+  navigator.clipboard?.writeText(csv).then(
+    () => show("CSV wurde in die Zwischenablage kopiert", "good"),
+    () => show(csv || "Noch keine Testdaten vorhanden", "info")
+  );
+}
+
+function keyDown(e) {
+  const key = e.key.toLowerCase();
+  if (key === "r") {
+    e.preventDefault();
+    resetGame();
+    return;
+  }
+  const c = controllers.find(item => item.key === key);
+  if (!c || held[key]) return;
+  e.preventDefault();
+  if (handleInstantModePress(c)) return;
+  held[key] = true;
+  c.holding = true;
+  c.charge = .12;
+}
+
+function keyUp(e) {
+  const key = e.key.toLowerCase();
+  const c = controllers.find(item => item.key === key);
+  if (!c) return;
+  e.preventDefault();
+  held[key] = false;
+  if (c.holding) send(c);
+  c.holding = false;
+  c.charge = 0;
+}
+
+function pointerDown(e) {
+  const rect = canvas.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  const c = controllers.find(item => Math.hypot(item.x - px, item.y - py) < radius * 1.45);
+  if (!c || c.holding) return;
+  c.holding = true;
+  c.charge = .12;
+  c.pointerId = e.pointerId;
+}
+
+function pointerUp(e) {
+  controllers.forEach(c => {
+    if (c.holding && c.pointerId === e.pointerId) {
+      send(c);
+      c.holding = false;
+      c.charge = 0;
+      c.pointerId = null;
+    }
+  });
+}
+
+function update(dt) {
+  if (ui.gameMode.value === "loop" && gameTime >= modeState.nextSwitch) {
+    modeState.targetIndex = (modeState.targetIndex + 1) % controllers.length;
+    modeState.nextSwitch = gameTime + Math.max(420, 1050 - modeState.streak * 18);
+    modeState.streak = 0;
+    show(`Looping Louie: Ziel ${controllers[modeState.targetIndex].key.toUpperCase()}`, "info");
+  }
+
+  if (ui.gameMode.value === "pong" && gameTime > modeState.deadline) {
+    attempts += 1;
+    modeState.streak = 0;
+    modeState.targetIndex = 0;
+    modeState.lastIndex = 3;
+    modeState.deadline = gameTime + difficultyWindow() + 650;
+    ball.energy *= .48;
+    show("Ping Pong: Signal verpasst, Neustart bei A", "bad");
+    logModeAttempt(false, "Verpasst", "-", "A");
+  }
+
+  controllers.forEach(c => {
+    if (c.holding) c.charge = Math.min(1, c.charge + dt / CHARGE_TIME);
+    const idle = (gameTime - c.lastSend) / 1000;
+    if (idle > 2.5) c.build = Math.max(0, c.build - (0.04 + Math.min(.5, (idle - 2.5) * .09)) * dt / 1000);
+    c.flash = Math.max(0, c.flash - dt / 260);
+  });
+
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const p = pulses[i];
+    if ((gameTime - p.t0) / TRAVEL >= 1) {
+      if (p.ghost) ball.ring = Math.max(ball.ring, .7);
+      else arrive(p);
+      pulses.splice(i, 1);
+    }
+  }
+
+  ball.energy = Math.max(.04, ball.energy - dt / 5200);
+  ball.ring = Math.max(0, ball.ring - dt / 700);
+  ball.shake = Math.max(0, ball.shake - dt / 900);
+
+  ui.score.textContent = score;
+  ui.attempts.textContent = attempts;
+  ui.spread.textContent = ui.gameMode.value === "tug" ? Math.abs(modeState.balance) : lastSpread === null ? "-" : `${lastSpread}`;
+  ui.window.textContent = ui.gameMode.value === "tug" ? "100" : difficultyWindow();
+  ui.mode.textContent = modeName();
+}
+
+function drawCable(c) {
+  ctx.lineWidth = 1;
+  for (let i = 0; i < SEGMENTS; i++) {
+    const t = i / (SEGMENTS - 1);
+    const p = pointAt(c, t);
+    let lit = .055;
+
+    if (t <= c.build) {
+      const edge = Math.min(1, (c.build - t) * 14);
+      lit = .12 + .5 * edge;
+    }
+
+    let glow = 0;
+    for (const pulse of pulses) {
+      if (pulse.c !== c) continue;
+      const pt = (gameTime - pulse.t0) / TRAVEL;
+      const d = pt - t;
+      if (d > -.012 && d < .16) glow = Math.max(glow, (1 - d / .16) * (.52 + pulse.amt * .68));
+    }
+
+    if (glow > .05) {
+      ctx.beginPath();
+      ctx.fillStyle = color(c, glow * .15);
+      ctx.arc(p.x, p.y, 22 * glow, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.fillStyle = color(c, Math.min(1, lit + glow));
+    ctx.arc(p.x, p.y, 2.1 + glow * 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawController(c) {
+  const size = radius * .94;
+  const active = (ui.gameMode.value === "loop" || ui.gameMode.value === "pong") && controllers[modeState.targetIndex] === c;
+  const glow = Math.max(c.flash, c.charge * .84, active ? .88 : 0);
+
+  ctx.save();
+  ctx.translate(c.x, c.y);
+
+  if (glow > .02) {
+    ctx.beginPath();
+    ctx.fillStyle = color(c, glow * .12);
+    ctx.arc(0, 0, size * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = "rgba(10,12,17,.84)";
+  ctx.strokeStyle = color(c, .48 + glow * .42);
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.rect(-size, -size * .76, size * 2, size * 1.52);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = color(c, .22);
+  ctx.arc(0, 0, size * .52, 0, Math.PI * 2);
+  ctx.stroke();
+
+  if (c.charge > 0) {
+    ctx.beginPath();
+    ctx.strokeStyle = color(c, .96);
+    ctx.arc(0, 0, size * .52, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * c.charge);
+    ctx.stroke();
+  }
+
+  if (active) {
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(255,255,255,.72)";
+    ctx.lineWidth = 2;
+    ctx.arc(0, 0, size * .72, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = color(c, .95);
+  ctx.font = "700 13px Cascadia Mono, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(c.key.toUpperCase(), 0, 0);
+
+  ctx.fillStyle = color(c, .82);
+  ctx.font = "600 12px system-ui, sans-serif";
+  ctx.fillText(c.label, 0, -size * .82 - 14);
+  ctx.restore();
+}
+
+function drawBall() {
+  const e = ball.energy;
+  const jitter = ball.shake * 2.4;
+  const x = center.x + (Math.random() - .5) * jitter;
+  const y = center.y + (Math.random() - .5) * jitter;
+  const pulse = 1 + Math.sin(gameTime / 260) * .05 * (.3 + e);
+
+  const gradient = ctx.createRadialGradient(x, y, radius * .2, x, y, radius * (3.8 + e * 2.2));
+  gradient.addColorStop(0, `rgba(255,249,224,${.12 + e * .45})`);
+  gradient.addColorStop(1, "rgba(255,249,224,0)");
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x, y, radius * (3.8 + e * 2.2), 0, Math.PI * 2);
+  ctx.fill();
+
+  if (ball.ring > 0) {
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = `rgba(255,249,224,${ball.ring * .58})`;
+    ctx.arc(x, y, radius * (1.08 + (1 - ball.ring) * 2.5), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  ctx.fillStyle = `rgba(255,250,235,${.08 + e * .86})`;
+  ctx.arc(x, y, radius * pulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.strokeStyle = `rgba(241,238,232,${.34 + e * .55})`;
+  ctx.lineWidth = 2;
+  ctx.arc(x, y, radius * pulse, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = e > .52 ? "rgba(9,10,13,.9)" : "rgba(241,238,232,.65)";
+  ctx.font = "700 12px Cascadia Mono, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("ORB", x, y);
+}
+
+function drawMeters() {
+  const bw = Math.min(52, W * .07);
+  const gap = 10;
+  const y = center.y + radius * 3.1;
+  let x = center.x - (controllers.length * bw + (controllers.length - 1) * gap) / 2;
+
+  controllers.forEach(c => {
+    const a = arrivals.find(row => row.id === c.id);
+    ctx.fillStyle = color(c, .16);
+    ctx.fillRect(x, y, bw, 5);
+    if (a) {
+      ctx.fillStyle = color(c, .95);
+      ctx.fillRect(x, y, bw * a.amt, 5);
+    }
+    x += bw + gap;
+  });
+}
+
+function drawModeOverlay() {
+  if (ui.gameMode.value === "tug") {
+    const barW = Math.min(360, W * .42);
+    const barH = 12;
+    const x = center.x - barW / 2;
+    const y = center.y + radius * 2.45;
+    const t = (modeState.balance + 100) / 200;
+    ctx.fillStyle = "rgba(255,255,255,.12)";
+    ctx.fillRect(x, y, barW, barH);
+    ctx.fillStyle = modeState.balance < 0 ? "rgba(245,194,67,.88)" : "rgba(239,59,50,.88)";
+    ctx.fillRect(x + barW / 2, y, (t - .5) * barW, barH);
+    ctx.strokeStyle = "rgba(241,238,232,.42)";
+    ctx.strokeRect(x, y, barW, barH);
+  }
+
+  if (ui.gameMode.value === "pong") {
+    const target = controllers[modeState.targetIndex];
+    const remaining = Math.max(0, modeState.deadline - gameTime);
+    ctx.fillStyle = "rgba(241,238,232,.62)";
+    ctx.font = "12px Cascadia Mono, Consolas, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`NEXT ${target.key.toUpperCase()} | ${Math.round(remaining)} ms`, center.x, center.y + radius * 2.55);
+  }
+
+  if (ui.gameMode.value === "loop") {
+    const target = controllers[modeState.targetIndex];
+    ctx.fillStyle = "rgba(241,238,232,.62)";
+    ctx.font = "12px Cascadia Mono, Consolas, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`ACTIVE ${target.key.toUpperCase()} | STREAK ${modeState.streak}`, center.x, center.y + radius * 2.55);
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  controllers.forEach(drawCable);
+  drawBall();
+  controllers.forEach(drawController);
+  drawMeters();
+  drawModeOverlay();
+
+  ctx.fillStyle = "rgba(241,238,232,.45)";
+  ctx.font = "12px Cascadia Mono, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(lastReason, center.x, Math.max(28, center.y - radius * 2.05));
+}
+
+function frame(now) {
+  const dt = Math.min(64, now - lastTime);
+  lastTime = now;
+  gameTime += dt;
+  update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener("resize", resize);
+window.addEventListener("keydown", keyDown);
+window.addEventListener("keyup", keyUp);
+canvas.addEventListener("pointerdown", pointerDown);
+window.addEventListener("pointerup", pointerUp);
+ui.resetBtn.addEventListener("click", resetGame);
+ui.exportBtn.addEventListener("click", exportCsv);
+ui.difficulty.addEventListener("change", resetGame);
+ui.gameMode.addEventListener("change", resetGame);
+ui.testMode.addEventListener("change", () => {
+  show(`Testmodus: ${ui.testMode.value}`, "info");
+});
+
+resize();
+resetGame();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
