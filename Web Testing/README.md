@@ -31,6 +31,13 @@ Diese Webversion ist eine eigenstaendige PC-Testfassung des GUST-Prototyps.
 
 ## Testziel
 
+## Spielmodi
+
+- **OG GUST:** Alle vier Signale muessen gleichzeitig und mit aehnlicher Staerke ankommen.
+- **Tug of War:** A/S (links) und K/L (rechts) senden Kraftimpulse und ziehen die Balance zu ihrer Seite.
+- **Looping Louie:** Das leuchtende Ziel wandert im Kreis; nur die aktive Station darf gedrueckt werden.
+- **Ping Pong:** Das Signal wird in der angezeigten Reihenfolge innerhalb des Countdowns weitergegeben.
+
 Pruefen, ob Spieler:innen die Kernmechanik verstehen:
 
 1. Halten laedt ein Signal.

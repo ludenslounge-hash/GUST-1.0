@@ -835,6 +835,7 @@ function pointerDown(e) {
   const py = e.clientY - rect.top;
   const c = controllers.find(item => Math.hypot(item.x - px, item.y - py) < radius * 1.45);
   if (!c || c.holding) return;
+  if (handleInstantModePress(c)) return;
   c.holding = true;
   c.charge = .12;
   c.pointerId = e.pointerId;
@@ -1105,6 +1106,14 @@ function frame(now) {
 window.addEventListener("resize", resize);
 window.addEventListener("keydown", keyDown);
 window.addEventListener("keyup", keyUp);
+window.addEventListener("blur", () => {
+  Object.keys(held).forEach(key => { held[key] = false; });
+  controllers.forEach(c => {
+    c.holding = false;
+    c.charge = 0;
+    c.pointerId = null;
+  });
+});
 canvas.addEventListener("pointerdown", pointerDown);
 window.addEventListener("pointerup", pointerUp);
 ui.resetBtn.addEventListener("click", resetGame);
